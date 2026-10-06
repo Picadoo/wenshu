@@ -1,0 +1,23 @@
+{
+  "_comment": "Paths are relative to the repository root. Absolute paths are also accepted.",
+  "vault": "vault",
+  "wenshu": "wenshu-pro",
+  "work": "_work/lite",
+  "agent": {
+    "_comment": "Use a configured and authenticated CLI from PATH. Empty model uses that CLI's configured model; runners optionally overrides command templates.",
+    "runner": "codex",
+    "models": {
+      "codex": "",
+      "claude": "",
+      "grok": "",
+      "kimi": ""
+    },
+    "model": "",
+    "effort": "low",
+    "rounds": 2,
+    "timeoutMinutes": 90,
+    "idleMinutes": 10,
+    "maxParallel": 2,
+    "runners": {}
+  }
+}

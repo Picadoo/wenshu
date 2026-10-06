@@ -1,0 +1,4 @@
+# Current paper-ingest pipeline
+PyMuPDF>=1.24
+Pillow>=10
+requests>=2.31

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "文枢 Open Source",
+  "version": "0.1.0",
+  "identifier": "com.wenshu.opensource",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:8080",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [{
+      "label": "main", "title": "文枢", "width": 1440, "height": 900,
+      "minWidth": 900, "minHeight": 600, "center": true,
+      "decorations": false, "shadow": true
+    }],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' http://vault.localhost https://vault.localhost data: blob: https:; font-src 'self' data:; connect-src 'self' http://vault.localhost https://vault.localhost http://127.0.0.1:* http://localhost:* https: ipc: http://ipc.localhost; frame-src 'self' http://vault.localhost https://vault.localhost blob:"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "resources": {"../public/vault/": "vault/"},
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.ico"],
+    "windows": {"nsis": {"languages": ["SimpChinese", "English"], "installMode": "currentUser"}}
+  }
+}

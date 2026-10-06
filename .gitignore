@@ -1,0 +1,29 @@
+# Local libraries and AI working material never belong in the public source tree.
+/vault/
+/_work/
+/_backup/
+/_archive/
+/output/
+*.log
+*.last.txt
+*.db
+*.db-journal
+*.sqlite*
+__pycache__/
+*.py[cod]
+.venv/
+node_modules/
+dist/
+target/
+.env
+.env.*
+!.env.example
+config.local.json
+# Generated mirrors may contain a user's entire library.
+/wenshu-pro/public/vault/
+/wenshu-pro/public/vendor/
+/wenshu-pro/src/data/generated-*.ts
+/wenshu-pro/src-tauri/gen/
+.DS_Store
+Thumbs.db
+

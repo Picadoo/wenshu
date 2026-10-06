@@ -1,0 +1,7 @@
+{
+  "_comment": "Paths are relative to the repository root. Keep skills/shared with this skill.",
+  "vault": "vault",
+  "wenshu": "wenshu-pro",
+  "language": "zh",
+  "default_mode": "beginner"
+}
