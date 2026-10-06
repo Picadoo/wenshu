@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-cutfigs.py — 按 AI 排版核出的清单 out/layout.json 裁图、嵌图（v2「先排版」流程的第 ② 步）。
+cutfigs.py — 按核准清单 out/layout.json 裁图、嵌图。
 
     python cutfigs.py --work <workdir> [--embed] [--force] [--zoom 2.2]
 

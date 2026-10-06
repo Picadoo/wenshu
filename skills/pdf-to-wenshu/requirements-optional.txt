@@ -1,2 +1,0 @@
-# Optional features of the legacy pipeline
-pymupdf4llm

@@ -1,84 +1,52 @@
 # 文枢 · Wenshu
 
-本地科研文献库：整理 PDF，阅读中英文全文，查看图表与公式，保存笔记、高亮和生词。提供 React 网页客户端、Tauri 桌面壳、AI 辅助入库技能与可选自托管 API。
+读论文、看双语对照、核对原 PDF，把高亮、笔记和生词留在自己的文库里。
 
-公开版保留自研的数据和阅读逻辑，并使用独立实现的界面。仓库仅带一篇 CC BY 4.0 示例论文；个人文库、批注、阅读记录和密钥均不属于发布内容。
+**[在线体验](https://picadoo.github.io/wenshu/)** · [导入自己的 PDF](docs/PDF_IMPORT.md) · [开发与桌面构建](docs/DEVELOPMENT.md)
 
-## 快速开始
+## 先读一篇
 
-需要 Node.js 20+、Python 3.10+。Python 命令若在你的系统中为 `python3`，相应替换。
+打开在线体验，点击「开始读示例」，就能试用中文正文、英文原文、双语对照、公式、图片和原 PDF。高亮和个人笔记保存在你自己的浏览器里。
+
+预览使用一篇明确采用 CC BY 4.0 的公开论文，不需要登录、API Key 或安装软件。论文译文、AI 学习笔记与个人笔记分别展示；原始来源和改编说明见 [示例署名](examples/README.md)。
+
+## 在自己的电脑上运行
+
+需要 **Node.js 20+** 和 **Python 3.10+**。
 
 ```sh
-python -m pip install -r skills/requirements.txt
-cd wenshu-pro
+git clone https://github.com/Picadoo/wenshu.git
+cd wenshu/app
 npm ci
-npm run sample
 npm run dev
 ```
 
-访问 `http://localhost:8080`。示例生成的目录和镜像被 Git 忽略；仓库中的原始示例位于 `examples/vault/`。
+打开 `http://localhost:8080`，示例会自动准备好。阅读示例不需要配置 AI，也不用安装 PDF 处理依赖。
 
-## 桌面版
+想整理自己的 PDF，继续看 [PDF 导入指南](docs/PDF_IMPORT.md)。目前 PDF 整理由 AI 辅助入库流程完成，网页负责阅读和笔记。
 
-当前安装包目标为 Windows（NSIS）。额外需要 Rust、MSVC Build Tools 和 WebView2。
+## 可以做什么
 
-```sh
-cd wenshu-pro
-npm run sample
-npm run tauri dev
-# 生成安装包
-npm run tauri build
+- 阅读完整中英文正文，切换双语对照、图片和原 PDF。
+- 显示可编辑 LaTeX 公式、表格、引用与术语提示。
+- 保存高亮、摘录、个人笔记、生词和阅读位置。
+- 通过 PDF 入库技能生成正文、译文、图表与学习笔记。
+- 构建 Windows 桌面版；按需要配置自己的同步后端。
+
+## 项目结构
+
+```text
+app/        阅读客户端、桌面壳与可选后端
+skills/     PDF 入库和论文文字技能
+examples/   唯一公开示例及其署名
+docs/       使用与开发指南
 ```
 
-桌面版内置示例。设置中可以分别选择个人笔记目录与同步后的阅读镜像目录；自有文库无需嵌入程序。公开版使用独立应用标识 `com.wenshu.opensource`，个人数据默认保存在应用数据目录。
+自己的文库放在根目录 `vault/`，处理材料放在 `_work/`。这两个目录、个人批注、密钥和生成的文库镜像默认不提交到 Git。
 
-## 导入自己的论文
+## 许可与致谢
 
-将私人文库放在仓库根目录的 `vault/`，工作材料放在 `_work/`。两者均被 Git 忽略。先阅读 [入库技能](skills/paper-ingest/SKILL.md)，按需要配置 `skills/paper-ingest/config.json` 与旧流程配置。相对路径均按仓库根目录解析；AI CLI 和模型由使用者自行配置，仓库不提供 API Key。
+项目代码采用 [AGPL-3.0](LICENSE)，第三方材料保留各自许可，见 [第三方声明](THIRD_PARTY_NOTICES.md)。示例论文及其译文改编采用 CC BY 4.0。
 
-流程为：查重 → 提取文字与页面图 → 核准原文、公式、表格和裁图 → 锁定内容翻译与学习笔记 → 验收 → 同步。普通 PDF 使用文字层，扫描版需要额外处理。自动检查通过并不代表语义准确，尤其要复核公式和定量结论。
-
-```sh
-cd wenshu-pro
-npm run sync
-```
-
-原 PDF 保留。笔记、批注和生词属于使用者，AI 入库流程不应改写这些数据。可选 API 的运行方式见 [server/README.md](wenshu-pro/server/README.md)；写作技能见 [skills/README.md](skills/README.md)。
-
-## 目录
-
-| 目录 | 职责 |
-| --- | --- |
-| `wenshu-pro/src/` | 文库索引、Markdown/LaTeX 阅读、个人阅读数据 |
-| `wenshu-pro/src-tauri/` | 桌面窗口、文库资源协议、本地数据读写 |
-| `wenshu-pro/server/` | 可选自托管账号与个人数据 API |
-| `skills/paper-ingest/` | 当前 PDF 入库流程 |
-| `skills/pdf-to-wenshu/` | 旧版任务维护与检索 |
-| `skills/paper-writing/` | 带来源归因的论文文字技能 |
-| `examples/vault/` | 唯一公开示例 |
-
-内容格式见 [content-contract.md](wenshu-pro/docs/content-contract.md)。
-
-公开界面目前支持同篇双语对照，跨论文并排、用户删除及密码重置界面尚未接入。桌面壳已编译并验证文件读写边界，桌面操作和在线分享仍需实际部署验收。生产分享需要同域代理与静态文库鉴权，详见后端说明。
-
-## 验证与发布边界
-
-```sh
-cd wenshu-pro
-npm run build
-npm run test:markdown
-cd ..
-python -m unittest discover -s skills/paper-ingest/tests
-python -m unittest discover -s skills/pdf-to-wenshu/tests
-git add .
-python scripts/check-public-tree.py
-```
-
-发布检查只检查 Git 暂存范围，报告路径与规则，不打印疑似密钥。它不能识别所有秘密；发布前仍需检查实际暂存文件。不要强制添加 `.env`、私人 `vault/`、数据库、工作记录、构建产物或生成的全库目录。分享自己处理的论文前，还需确认其再分发和翻译授权。
-
-## 许可
-
-项目代码采用 [AGPL-3.0-only](LICENSE)。PDF 入库依赖 PyMuPDF 的开源版本，其许可为 AGPL；若有不同许可需求，请先确认相关依赖授权。其他第三方组件保留各自许可证，见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
-
-示例论文采用 CC BY 4.0，不受本项目代码许可证替代；原文作者署名、出处和译文改编说明见 [examples/README.md](examples/README.md)。
+新人入口与静态试读的组织参考了 [EasyRead](https://github.com/Edwardxlai/easyread)。文枢使用自己的阅读器和入库实现。
 

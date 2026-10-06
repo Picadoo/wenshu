@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-run_agent.py — 默认把锁定英文交给翻译 agent；--stage full 显式续跑旧整篇模式。
+run_agent.py — 把核准后的锁定英文交给翻译 agent，检查并合并中文译文。
 
     python run_agent.py --work <workdir> [--runner codex|claude|grok|kimi|<自定义名>] [--model M] [--effort E]
                         [--rounds 2] [--timeout-min 90] [--dry-run]
@@ -46,31 +46,6 @@ RUNNERS: dict[str, dict] = {
     # Kimi Code CLI
     "kimi": {"cmd": ["kimi", "-p", "{prompt_text}", "-y", "-m", "{model}", "--add-dir", "{work}"], "stdin": False},
 }
-
-REPAIR = """# 修复任务：{key}
-
-上一轮已经把论文内容写进了 `{out}`，但没通过确定性校验 `verify.py`。对照原文修复下面的问题，保持原意和完整性；不能通过删段、填字或扩大 overrides 消除报错。校验可能误报，需提供原页证据，不修改校验器。
-
-按下面错误定位相关章节，查阅 `{brief}` 中对应格式规则，再读对应原页和产物；不重读全部输入。页面图在 `pages/pP.png`，裁图工具为 `{figtools}`。
-不要读别的技能文档（`.agents/skills/`、`.claude/skills/`、`skills/pdf-to-wenshu/` 是已废弃的旧技能，规则和 brief 冲突）。
-只改 `{out}` 里的文件（必要时修正 `refs.md` 或用 figtools 补裁 `images/`），不要重写已经正确的部分，不要改 `{work}` 之外的任何东西。
-
-## errors（必须全部消掉）
-{errors}
-
-## warnings（尽量消掉）
-{warnings}
-
-## 校验命令（局部修改后运行一次；仍失败则报告，由宿主控制有限重试）
-```
-python "{verify}" --work "{work}"
-```
-PDF 里确实不存在某个图号/公式号/表号时（要看页面图确认），写 `{out}/verify_overrides.json`：
-`{{"figures": [], "equations": [], "tables": [], "reason": "为什么"}}`，校验会照登记放行。
-
-完成后只回复一段简短报告：改了什么、最终 verify 的 errors/warnings 数量。
-"""
-
 
 def utf8() -> None:
     if sys.platform == "win32":
@@ -120,7 +95,7 @@ def kill_tree(proc: subprocess.Popen) -> None:
 
 
 def say(*args) -> None:
-    """父 shell 先退出时 stdout 管道会断（实测：后台跑 80 分钟后 print 抛 OSError 把修复轮一起带走），打印失败就算了。"""
+    """关闭父 shell 后输出管道可能断开；仍允许本轮正常结束。"""
     try:
         print(*args, flush=True)
     except (OSError, ValueError):
@@ -193,8 +168,6 @@ def main() -> None:
     utf8()
     ap = argparse.ArgumentParser()
     ap.add_argument("--work", required=True)
-    ap.add_argument("--stage", choices=("translate", "full"), default="translate",
-                    help="默认只翻译；full 是旧整篇内容模式，不应派给 Luna")
     ap.add_argument("--runner", default="")
     ap.add_argument("--model", default="")
     ap.add_argument("--effort", default=None)
@@ -207,10 +180,6 @@ def main() -> None:
     a = ap.parse_args()
 
     work = Path(a.work).resolve()
-    brief = work / "brief.md"
-    if a.stage == "full" and not brief.exists():
-        raise SystemExit(f"没有 {brief}，先跑 extract.py")
-    meta = json.loads((work / "meta.json").read_text(encoding="utf-8"))
     cfg = load_config(Path(a.config).resolve() if a.config else None).get("agent", {})
     runners = dict(RUNNERS)
     for name, spec in (cfg.get("runners") or {}).items():
@@ -219,59 +188,45 @@ def main() -> None:
     if runner not in runners:
         raise SystemExit(f"未知 runner `{runner}`，可选：{sorted(runners)}")
     model = a.model or (cfg.get("models") or {}).get(runner) or cfg.get("model") or ""
-    effort = a.effort if a.effort is not None else ("low" if a.stage == "translate" else str(cfg.get("effort") or ""))
+    effort = a.effort if a.effort is not None else "low"
     rounds = a.rounds or int(cfg.get("rounds") or 2)
     timeout_s = (a.timeout_min or float(cfg.get("timeoutMinutes") or 90)) * 60
     idle_s = (a.idle_min if a.idle_min is not None else float(cfg.get("idleMinutes") or 10)) * 60
 
     agent_dir = work / "agent"
     agent_dir.mkdir(exist_ok=True)
-    timing = {"stage": a.stage, "runner": runner, "model": model, "effort": effort, "started_at": now_iso(), "rounds": []}
+    timing = {"stage": "translate", "runner": runner, "model": model, "effort": effort, "started_at": now_iso(), "rounds": []}
     if a.repair_only:
         old = json.loads((work / "timing.json").read_text(encoding="utf-8")) if (work / "timing.json").exists() else {}
-        timing = {**old, "stage": a.stage, "runner": runner, "model": model, "effort": effort, "rounds": list(old.get("rounds") or [])}
+        timing = {**old, "stage": "translate", "runner": runner, "model": model, "effort": effort, "rounds": list(old.get("rounds") or [])}
         timing.setdefault("started_at", now_iso())
     (work / "timing.json").write_text(json.dumps(timing, ensure_ascii=False, indent=1), encoding="utf-8")
 
     def repair_prompt(res: dict) -> str:
-        if a.stage == "translate":
-            if runner == "codex":
-                current = work / "translation/zh.locked.md"
-                draft = current.read_text(encoding="utf-8") if current.exists() else "（本轮未形成译文）"
-                return text_prompt() + "\n仅局部修复下列错误，仍只返回完整锁定译文：\n" + "\n".join(f"- {e}" for e in res["errors"]) + "\n\nBEGIN_CURRENT_LOCKED_DRAFT\n" + draft + "\nEND_CURRENT_LOCKED_DRAFT\n"
-            return (work / "translation/request.md").read_text(encoding="utf-8") + "\n仅修 zh.locked.md 的下列错误，不改其他文件：\n" + "\n".join(f"- {e}" for e in res["errors"])
-        return REPAIR.format(
-            key=meta.get("key", work.name), out=str(work / "out"), brief=str(brief), work=str(work),
-            figtools=str(HERE / "figtools.py"), verify=str(HERE / "verify.py"),
-            errors="\n".join(f"- {e}" for e in res["errors"]) or "（无）",
-            warnings="\n".join(f"- {w}" for w in res["warnings"]) or "（无）",
-        )
+        if runner == "codex":
+            current = work / "translation/zh.locked.md"
+            draft = current.read_text(encoding="utf-8") if current.exists() else "（本轮未形成译文）"
+            return text_prompt() + "\n仅局部修复下列错误，仍只返回完整锁定译文：\n" + "\n".join(f"- {e}" for e in res["errors"]) + "\n\nBEGIN_CURRENT_LOCKED_DRAFT\n" + draft + "\nEND_CURRENT_LOCKED_DRAFT\n"
+        return (work / "translation/request.md").read_text(encoding="utf-8") + "\n仅修 zh.locked.md 的下列错误，不改其他文件：\n" + "\n".join(f"- {e}" for e in res["errors"])
 
-    if a.stage == "translate":
-        prepared = prepare(work)
-        if not prepared["ok"]:
-            raise SystemExit("翻译准备失败：\n" + "\n".join(prepared["errors"]))
-        def text_prompt() -> str:
-            return TEXT_REQUEST + token_context(work) + "\nBEGIN_LOCKED_ENGLISH\n" + (work / "translation/input.md").read_text(encoding="utf-8") + "\nEND_LOCKED_ENGLISH\n"
+    prepared = prepare(work)
+    if not prepared["ok"]:
+        raise SystemExit("翻译准备失败：\n" + "\n".join(prepared["errors"]))
+    def text_prompt() -> str:
+        return TEXT_REQUEST + token_context(work) + "\nBEGIN_LOCKED_ENGLISH\n" + (work / "translation/input.md").read_text(encoding="utf-8") + "\nEND_LOCKED_ENGLISH\n"
 
-        prompt = text_prompt() if runner == "codex" else (work / "translation/request.md").read_text(encoding="utf-8")
-        cli_work = work / "translation"
+    prompt = text_prompt() if runner == "codex" else (work / "translation/request.md").read_text(encoding="utf-8")
+    cli_work = work / "translation"
 
-        def gate() -> dict:
-            result = merge(work)
-            return check_translation(work) if result["ok"] else {**result, "warnings": []}
-    else:
-        from verify import verify
-        say("WARNING: --stage full 是旧整篇内容模式；应由能核对原页的强模型完成，不应交给 Luna。")
-        prompt = brief.read_text(encoding="utf-8")
-        cli_work = work
-        gate = lambda: verify(work)
+    def gate() -> dict:
+        result = merge(work)
+        return check_translation(work) if result["ok"] else {**result, "warnings": []}
     result: dict = {}
     first = 1
     if a.repair_only:
         result = gate()
         if result["ok"]:
-            say(f"{a.stage} 校验已通过，无需修复")
+            say("翻译校验已通过，无需修复")
             say(json.dumps({"timing": timing, "verify": result}, ensure_ascii=False, indent=1))
             return
         prompt = repair_prompt(result)
@@ -279,15 +234,15 @@ def main() -> None:
         rounds = first + max(1, rounds - 1) - 1
     for rnd in range(first, rounds + 1):
         # Codex's write sandbox is narrowed to translation/ for this stage.
-        artifact_dir = cli_work if a.stage == "translate" else agent_dir
+        artifact_dir = cli_work
         ctx = {"work": str(cli_work), "model": model, "effort": effort, "prompt": str(artifact_dir / f"round{rnd}.prompt.md"),
                "prompt_text": prompt, "last": str(artifact_dir / f"round{rnd}.last.md"), "scripts": str(HERE)}
         Path(ctx["prompt"]).write_text(prompt, encoding="utf-8")
         cmd = build_cmd(list(runners[runner]["cmd"]), ctx)
         if a.dry_run:
-            say(json.dumps({"stage": a.stage, "round": rnd, "cwd": str(cli_work), "stdin": runners[runner]["stdin"], "cmd": cmd}, ensure_ascii=False, indent=1))
+            say(json.dumps({"stage": "translate", "round": rnd, "cwd": str(cli_work), "stdin": runners[runner]["stdin"], "cmd": cmd}, ensure_ascii=False, indent=1))
             return
-        if a.stage == "translate" and runner == "codex":
+        if runner == "codex":
             # -o is host-written final text. Clear this round's owned stale file;
             # an rc=0 command must produce fresh, nonempty output to merge.
             Path(ctx["last"]).unlink(missing_ok=True)
@@ -299,7 +254,7 @@ def main() -> None:
         # A failed CLI cannot publish a previous round's surviving locked file.
         if rc != 0:
             result = {"ok": False, "errors": [f"CLI 本轮退出失败 rc={rc}，未合并或采用旧产物"], "warnings": []}
-        elif a.stage == "translate" and runner == "codex":
+        elif runner == "codex":
             last = Path(ctx["last"])
             text = last.read_text(encoding="utf-8") if last.exists() else ""
             if not text.strip():
@@ -309,13 +264,13 @@ def main() -> None:
                 result = gate()
         else:
             result = gate()
-        entry = {"round": rnd, "stage": a.stage, "started_at": started, "completed_at": now_iso(), "seconds": secs, "rc": rc,
+        entry = {"round": rnd, "stage": "translate", "started_at": started, "completed_at": now_iso(), "seconds": secs, "rc": rc,
                  "verify": {"ok": result["ok"], "errors": len(result["errors"]), "warnings": len(result["warnings"])}}
         timing["rounds"].append(entry)
         timing["completed_at"] = entry["completed_at"]
         timing["seconds"] = round(sum(r["seconds"] for r in timing["rounds"]), 1)
         (work / "timing.json").write_text(json.dumps(timing, ensure_ascii=False, indent=1), encoding="utf-8")
-        say(f"[round {rnd}] rc={rc} {secs}s {a.stage} check: ok={result['ok']} errors={len(result['errors'])} warnings={len(result['warnings'])}")
+        say(f"[round {rnd}] rc={rc} {secs}s translation check: ok={result['ok']} errors={len(result['errors'])} warnings={len(result['warnings'])}")
         if result["ok"] or rnd == rounds:
             break
         prompt = repair_prompt(result)

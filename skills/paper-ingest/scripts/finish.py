@@ -3,7 +3,7 @@
 """
 finish.py — 把子代理写好的 out/ 内容装配成文枢集群，合并术语库，跑前端质检并同步。
 
-    python finish.py --work <workdir> --vault <vault> [--wenshu <wenshu-pro>] [--no-sync] [--no-lint]
+    python finish.py --work <workdir> --vault <vault> [--wenshu <app>] [--no-sync] [--no-lint]
 
 需要 <workdir>/out/：zh.md · notes.md · terms.json · fields.json（英文原刊另需 en.md）。
 """

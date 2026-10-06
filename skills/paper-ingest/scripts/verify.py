@@ -1,17 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-verify.py — 子代理产出 out/ 的确定性校验闸门：图一个不漏、公式一个不漏、表一个不漏、格式不违约。
+verify.py — 检查 out/ 正文、清单、源审核与阅读格式。
 
     python verify.py --work <workdir>            # 打印 JSON；有 error 退出码 1，否则 0
     python verify.py --work <workdir> --quiet    # 只打印一行结论
 
-「应有多少张图 / 多少条公式 / 多少张表」不信草稿、不信子代理，直接从 PDF 文本重新数：
-  - 图：fulltext.txt 里行首的 `Fig. N` / `FIGURE N` / `图 N`（Wiley 的 `F I G U R E 1 4` 先合并）∪ stats.figureList
-  - 公式：行尾 `(N)` 且该行含数学符号 ∪ 草稿里的 `<!--EQ (N)-->` 标记
-  - 表：行首 `Table N` / `TA B L E N` / `表 N`
-  编号是连续的，min..max 之间缺号一律当 error。子代理确认 PDF 里确实没有某编号时，
-  写 out/verify_overrides.json：{"figures":[N],"equations":[N],"tables":[N],"reason":"…"}，本脚本会照登记并放行。
+图表公式以核准的 out/layout.json 为清单，PDF 文字中的正则计数只作提醒。
+原刊确实跳号时，需以原页证据在 out/verify_overrides.json 登记编号和原因。
+结构、数量和渲染检查不能证明源内容或翻译语义正确。
 结果写到 <workdir>/verify.json，finish.py 会先跑本脚本，有 error 不装配。
 """
 from __future__ import annotations
@@ -264,7 +261,7 @@ def check_caption_files(md: str, cap_re: re.Pattern, files: dict[str, str], erro
 
 def check_source_quality(work: Path, en: str, zh: str, expected: set[int], lang: str,
                          errors: list[str], counts: dict) -> None:
-    """New jobs require sealed source review and explicit per-image approval.
+    """Validate the source review seal and explicit per-image approval.
 
     The seal records a visual review; it cannot infer formula or crop semantics.
     """
@@ -340,8 +337,7 @@ def check_math(md: str, file: str, errors: list[str], warnings: list[str]) -> No
 
 
 def check_table_cells(md: str, file: str, errors: list[str]) -> None:
-    """表格行里的裸 `<` / `>`（含 `<br>`）会把前端表格崩掉——口径与 wenshu-pro/scripts/web_lint.py 完全一致。
-    Example2024 第一次过了 verify 却在 web_lint 报 2 警（`<0.0001`、`<br>`），所以把这条提前到闸门里。"""
+    """检查表格行中的裸 `<` / `>`；与阅读端 web_lint.py 使用同一规则。"""
     bad: list[int] = []
     for i, line in enumerate(md.splitlines(), start=1):
         if not line.lstrip().startswith("|"):

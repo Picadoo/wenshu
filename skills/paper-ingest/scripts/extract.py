@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-extract.py — 论文 PDF → 工作区（v2「先排版」流程的第 ① 步，纯脚本，不用 AI，不裁图）。
+extract.py — 论文 PDF → 工作区；直接抽取文字并渲染原页，不裁图。
 
     python extract.py --pdf <file.pdf> --work <workdir> [--no-crossref] [--dpi 100]
 
@@ -13,7 +13,7 @@ extract.py — 论文 PDF → 工作区（v2「先排版」流程的第 ① 步�
     refs.md          同源参考文献清单（- **[N]** … ^ref-N），供中英文正文末尾直接拼接
     brief.md         给 AI 的任务书：① 排版出 out/en.md + out/layout.json → ② cutfigs.py 按清单裁图 → ③ 翻译 / 笔记 → ④ verify
     stats.json       各步耗时与正则粗数（报告用）
-不再产 en.draft.md（结构靠猜的草稿），不在这一步裁图——图注清单由 AI 排版核出后再切（cutfigs.py）。
+先核准正文与图注清单，再用 cutfigs.py 裁图。
 """
 from __future__ import annotations
 
@@ -83,7 +83,7 @@ def crossref(doi: str, timeout: float = 12.0) -> dict:
     try:
         resp = requests.get(
             f"https://api.crossref.org/works/{doi}",
-            headers={"User-Agent": "paper-ingest/1.0 (mailto:markraines280@gmail.com)"},
+            headers={"User-Agent": "wenshu-paper-ingest/1.0"},
             timeout=timeout,
         )
         if resp.status_code != 200:
@@ -125,7 +125,7 @@ def crossref_by_title(title: str, timeout: float = 12.0) -> dict:
         import requests
         resp = requests.get("https://api.crossref.org/works",
                             params={"query.bibliographic": title, "rows": 3},
-                            headers={"User-Agent": "paper-ingest/1.0 (mailto:markraines280@gmail.com)"},
+                            headers={"User-Agent": "wenshu-paper-ingest/1.0"},
                             timeout=timeout)
         items = resp.json().get("message", {}).get("items", []) if resp.status_code == 200 else []
     except Exception:
@@ -447,7 +447,7 @@ def parse_refs(lines: list[str]) -> list[str]:
 
 BRIEF = """# 源稿核准任务：{key}（{lang_name}）
 
-由具备原页视觉核对能力的主代理/较强模型负责。只产正文、清单和审核记录；Luna 等翻译模型另收锁定任务，不能承担公式转写或裁图判断。
+由具备原页视觉核对能力的主代理负责。只产正文、清单和审核记录；翻译代理另收锁定任务，不承担公式转写或裁图判断。
 
 ## 输入
 工作区：{work}
@@ -567,7 +567,7 @@ def _fmt_nums(nums: list[int]) -> str:
 
 
 def write_brief(work: Path, meta: dict, domains: list[str], stats: dict, titleblock: str) -> None:
-    """写 brief.md（v2「先排版」任务书）。应有清单不再由脚本给，只给正则粗数作提示。"""
+    """写源稿核准任务书；正则粗数仅作提示。"""
     lang = meta.get("lang", "en")
     hints = stats.get("columns", {})
     scripts = Path(__file__).resolve().parent

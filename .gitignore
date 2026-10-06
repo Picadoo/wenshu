@@ -20,10 +20,10 @@ target/
 !.env.example
 config.local.json
 # Generated mirrors may contain a user's entire library.
-/wenshu-pro/public/vault/
-/wenshu-pro/public/vendor/
-/wenshu-pro/src/data/generated-*.ts
-/wenshu-pro/src-tauri/gen/
+/app/public/vault/
+/app/public/vendor/
+/app/src/data/generated-*.ts
+/app/src-tauri/gen/
 .DS_Store
 Thumbs.db
 

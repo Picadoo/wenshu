@@ -1,8 +1,8 @@
 {
   "_comment": "Paths are relative to the repository root. Absolute paths are also accepted.",
   "vault": "vault",
-  "wenshu": "wenshu-pro",
-  "work": "_work/lite",
+  "wenshu": "app",
+  "work": "_work/papers",
   "agent": {
     "_comment": "Use a configured and authenticated CLI from PATH. Empty model uses that CLI's configured model; runners optionally overrides command templates.",
     "runner": "codex",

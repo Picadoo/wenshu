@@ -17,7 +17,7 @@ def main() -> int:
         print("FAIL: stage the public files before checking")
         return 1
     errors = []
-    forbidden = ("vault/", "_work/", "_backup/", "_archive/", "wenshu-pro/public/vault/")
+    forbidden = ("vault/", "_work/", "_backup/", "_archive/", "app/public/vault/")
     tokens = re.compile(r"\b(?:sk-[A-Za-z0-9_-]{24,}|gh[pousr]_[A-Za-z0-9]{24,})\b|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----")
     local_paths = re.compile(r"\b[A-Z]:[\\/](?:Users|Works)[\\/]", re.I)
     pdfs = []
@@ -30,7 +30,7 @@ def main() -> int:
             errors.append((name, "environment file"))
         if path.suffix in {".db", ".sqlite", ".sqlite3", ".log"} or "我的笔记" in name or "_web批注" in name or "_活动日志" in name:
             errors.append((name, "personal or runtime data"))
-        if name.startswith("wenshu-pro/src/data/generated-"):
+        if name.startswith("app/src/data/generated-"):
             errors.append((name, "generated catalog"))
         if path.suffix.lower() == ".pdf":
             pdfs.append(name)

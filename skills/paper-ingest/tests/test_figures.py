@@ -206,7 +206,7 @@ class FigureAcceptance(unittest.TestCase):
         figtools.save_report(self.work, report)
         self.assertTrue(any("越界" in error for error in figtools.review_errors(self.work)))
 
-    def test_duplicate_records_and_missing_or_unknown_legacy_geometry_are_rejected(self):
+    def test_duplicate_records_and_missing_or_unknown_geometry_are_rejected(self):
         self.set_layout([("1", 1)])
         self.manual()
         report = figtools.load_report(self.work)
@@ -216,7 +216,7 @@ class FigureAcceptance(unittest.TestCase):
         self.assertTrue(any("重复图号" in error for error in figtools.review_errors(self.work)))
         self.write_json("figcut.json", {"figures": []})
         self.assertTrue(any("缺少 figcut" in error for error in figtools.review_errors(self.work)))
-        # A legacy PNG without a source record remains intact, but is never assigned a guessed bbox.
+        # An image without a source record remains intact; never guess its bbox.
         kept = cutfigs.cut(self.work, 2.2, False)["figures"][0]
         self.assertEqual(kept["status"], "kept")
         self.assertNotIn("bbox", kept)
