@@ -4,7 +4,7 @@ import { BrowserRouter, HashRouter } from 'react-router';
 import CssBaseline from '@mui/material/CssBaseline';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { App } from './app';
-import { APP_BASE, IS_PAGES_PREVIEW } from './lib/app-env';
+import { APP_BASE, USES_HASH_ROUTING } from './lib/app-env';
 import './styles.css';
 
 const theme = createTheme({
@@ -13,7 +13,7 @@ const theme = createTheme({
   shape: { borderRadius: 10 },
 });
 
-const app = IS_PAGES_PREVIEW ? <HashRouter><App /></HashRouter> : <BrowserRouter basename={APP_BASE}><App /></BrowserRouter>;
+const app = USES_HASH_ROUTING ? <HashRouter><App /></HashRouter> : <BrowserRouter basename={APP_BASE}><App /></BrowserRouter>;
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode><ThemeProvider theme={theme}><CssBaseline />{app}</ThemeProvider></React.StrictMode>
 );

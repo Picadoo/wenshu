@@ -45,6 +45,9 @@ jobs:
       - name: Check deployment paths
         working-directory: app
         run: npm run test:pages
+      - name: Check literature workspace
+        working-directory: app
+        run: npm run test:workspace
       - uses: actions/upload-pages-artifact@v4
         with:
           path: app/dist

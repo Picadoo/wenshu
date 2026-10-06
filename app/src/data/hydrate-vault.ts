@@ -1,8 +1,8 @@
 import { useSyncExternalStore } from 'react';
 
 import { hydrateActivity } from './activity';
-import { terms, hydrateTerms } from './terms';
-import { papers, hydratePapers } from './papers';
+import { hydrateTerms } from './terms';
+import { hydratePapers } from './papers';
 import { VAULT_ORIGIN, VAULT_CONTRACT } from './vault';
 
 import type { TermEntry } from './terms';
@@ -41,6 +41,8 @@ type CatalogJson = { papers?: Paper[]; topicDocs?: TopicDoc[] };
 type TermsJson = { terms?: TermEntry[] };
 
 let lastFingerprint = '';
+let catalogInitialized = false;
+let termsInitialized = false;
 
 function catalogFingerprint(
   catalog: CatalogJson | null,
@@ -74,12 +76,12 @@ export async function hydrateVaultData() {
   const root = VAULT_CONTRACT.publicRoot;
   const [catalog, termsData, activityData] = await Promise.all([
     fetchJson<CatalogJson>(VAULT_CONTRACT.catalog).then(async (data) => {
-      if (data?.papers?.length || papers.length) return data;
+      if (Array.isArray(data?.papers) || catalogInitialized) return data;
       const { generatedPapers, generatedTopicDocs } = await import('./generated-catalog');
       return { papers: generatedPapers, topicDocs: generatedTopicDocs };
     }),
     fetchJson<TermsJson>(`${root}/terms.json`).then(async (data) => {
-      if (data?.terms?.length || terms.length) return data;
+      if (Array.isArray(data?.terms) || termsInitialized) return data;
       const { generatedTerms } = await import('./generated-terms');
       return { terms: generatedTerms };
     }),
@@ -87,12 +89,14 @@ export async function hydrateVaultData() {
   ]);
 
   let changed = false;
-  if (catalog?.papers?.length) {
+  if (Array.isArray(catalog?.papers)) {
     hydratePapers(catalog.papers, catalog.topicDocs ?? []);
+    catalogInitialized = true;
     changed = true;
   }
-  if (termsData?.terms?.length) {
+  if (Array.isArray(termsData?.terms)) {
     hydrateTerms(termsData.terms);
+    termsInitialized = true;
     changed = true;
   }
   if (activityData?.days) {

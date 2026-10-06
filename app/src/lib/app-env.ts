@@ -1,5 +1,5 @@
-/** Static previews use hash routes so a copied reader URL also works on GitHub Pages. */
-export const IS_PAGES_PREVIEW = import.meta.env.MODE === 'pages';
+/** GitHub Pages needs hash routes; hosting does not change product features. */
+export const USES_HASH_ROUTING = import.meta.env.MODE === 'pages';
 export const APP_BASE = import.meta.env.BASE_URL || '/';
 
 export function appAssetUrl(path: string) {
@@ -7,5 +7,5 @@ export function appAssetUrl(path: string) {
 }
 
 export function appRouteUrl(path: string) {
-  return IS_PAGES_PREVIEW ? `${APP_BASE}#${path}` : `${APP_BASE.replace(/\/$/, '')}${path}`;
+  return USES_HASH_ROUTING ? `${APP_BASE}#${path}` : `${APP_BASE.replace(/\/$/, '')}${path}`;
 }

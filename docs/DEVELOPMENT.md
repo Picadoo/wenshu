@@ -10,7 +10,7 @@ npm run dev
 
 示例在首次运行时自动生成。代码与数据分离：`src/` 是客户端，`public/vault/` 是生成的阅读镜像，源示例在 `examples/vault/`。
 
-本地网页和 Tauri 使用根路径。GitHub Pages 使用 `pages` 构建模式、`/wenshu/` 资源路径和 hash 路由。Pages 展示唯一公开示例，个人批注只保存到访问者自己的浏览器，不连接公开后台。
+本地网页和 Tauri 使用根路径。GitHub Pages 使用 `pages` 构建模式、`/wenshu/` 资源路径和 hash 路由；构建模式不改变工作台、阅读器、AI 配置或同步入口。GitHub Pages 自身只托管静态前端，使用者可按需配置自己的 AI 接口和同步服务器。发布时仅携带允许公开的示例，个人数据默认保存在使用者自己的本机。
 
 ```sh
 npm run build

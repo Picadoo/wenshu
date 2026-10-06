@@ -16,6 +16,7 @@
     "typecheck": "tsc --noEmit",
     "test:markdown": "node scripts/check-markdown.mjs",
     "test:pages": "node scripts/check-pages.mjs",
+    "test:workspace": "node scripts/check-workspace.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "tauri": "tauri"
   },

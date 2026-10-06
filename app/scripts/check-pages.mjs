@@ -28,7 +28,7 @@ for (const scenario of [
     define: { 'import.meta.env.PROD': 'true', 'import.meta.env.BASE_URL': JSON.stringify(scenario.base), 'import.meta.env.MODE': JSON.stringify(scenario.mode) },
   });
   const module = await import('data:text/javascript;base64,' + Buffer.from(compiled.outputFiles[0].text).toString('base64'));
-  assert.equal(module.IS_PAGES_PREVIEW, scenario.mode === 'pages');
+  assert.equal(module.USES_HASH_ROUTING, scenario.mode === 'pages');
   assert.equal(module.VAULT_CONTRACT.catalog, scenario.vault + '/catalog.json');
   const originalFetch = globalThis.fetch;
   const requested = [];
@@ -57,6 +57,7 @@ for (const scenario of [
   assert.equal(root.querySelectorAll('.katex').length, 2);
   const readerRoute = '/dashboard/papers/' + paper.slug;
   assert.equal(module.appRouteUrl(readerRoute), scenario.mode === 'pages' ? '/wenshu/#' + readerRoute : readerRoute);
+  assert.equal(module.appRouteUrl('/share/test-token'), scenario.mode === 'pages' ? '/wenshu/#/share/test-token' : '/share/test-token');
   const vendorReady = module.ensureMarkdownVendors();
   assert.equal(document.querySelector('link[data-vendor]').getAttribute('href'), scenario.base + 'vendor/katex/katex.min.css');
   for (const file of ['marked.min.js', 'katex/katex.min.js', 'katex/auto-render.min.js']) {
@@ -66,6 +67,20 @@ for (const scenario of [
     await new Promise((done) => setImmediate(done));
   }
   await vendorReady;
+  globalThis.fetch = async (url) => {
+    if (String(url).endsWith('/catalog.json')) return new Response(JSON.stringify({ papers: [], topicDocs: [] }));
+    if (String(url).endsWith('/terms.json')) return new Response(JSON.stringify({ terms: [] }));
+    return new Response(JSON.stringify({ days: {}, papersByDay: {} }));
+  };
+  try {
+    await module.hydrateVaultData();
+    assert.equal(module.papers.length, 0, 'an empty library must not be replaced with the example');
+    globalThis.fetch = async () => new Response(null, { status: 503 });
+    await module.hydrateVaultData();
+    assert.equal(module.papers.length, 0, 'failed refresh must preserve a deliberately empty library');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
   dom.window.close();
 }
 process.stdout.write('Pages, local Web and desktop asset/hydration/Markdown checks passed.\n');

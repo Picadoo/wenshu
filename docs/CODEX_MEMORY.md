@@ -3,7 +3,7 @@
 ## Goal and scope
 - 文枢 is a local research library with bilingual Markdown reading and an AI-assisted PDF ingestion workflow.
 - The public client uses an independently implemented interface; commercial template source and assets are excluded.
-- The public repository is organized for first-time users: online example first, local reading second, PDF import as a separate guide.
+- The open source app is a literature workspace for users' own papers. The included paper is an ordinary library entry, not a separate demonstration workflow.
 
 ## Modules
 - `app/`: React client, Tauri desktop shell, optional self-hosted API.
@@ -18,6 +18,7 @@
 - The open source desktop app has its own application identifier and bundles the example library.
 - Source and layout checks do not prove semantic accuracy. Formulas, tables and translation require source review.
 - GitHub Pages uses `pages` mode, `/wenshu/` assets and HashRouter; local Web and Tauri retain root-path operation.
-- The static preview publishes only the example, stores visitor annotations in their browser, and hides backend/AI credential entry points.
-- EasyRead (`Edwardxlai/easyread`) informed the first-read entry and static demonstration structure; its source is only kept in the ignored reference workspace.
+- Hosting mode only changes asset roots and routing. Product screens and client capabilities are shared; AI and synchronization depend on the user's runtime configuration.
+- GitHub Pages hosts static source data, not a PDF-processing or synchronization server. PDF import runs locally; personal annotations remain local unless the user configures synchronization.
+- EasyRead (`Edwardxlai/easyread`) informed reading and onboarding; its source is only kept in the ignored reference workspace.
 

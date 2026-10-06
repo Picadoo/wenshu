@@ -23,10 +23,10 @@ p { line-height: 1.75; }
 .app-nav { display: flex; gap: .3rem; padding: 10px 24px; background: #fff; border-bottom: 1px solid #e0e3ec; overflow-x: auto; }
 .app-nav a { padding: .5rem .8rem; border-radius: 7px; text-decoration: none; white-space: nowrap; font-size: .9rem; color: #585a6a; }
 .app-nav a.active { background: #eee8fd; color: #4c3692; font-weight: 600; }
-.preview-banner { display: flex; justify-content: space-between; gap: 16px; padding: 10px 28px; border-bottom: 1px solid #e0e3ec; background: #f4f0ff; color: #655681; font-size: .8rem; line-height: 1.7; }
-.preview-banner a { white-space: nowrap; }
-.welcome { max-width: 900px; margin-top: 24px; background: linear-gradient(135deg, #fff, #f3effc); }
-.welcome-actions { display: flex; gap: 12px; flex-wrap: wrap; margin: 18px 0; }
+.workspace-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 24px; }
+.workspace-heading h1 { margin-bottom: 8px; }
+.workspace-heading p { margin: 0; }
+.workspace-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .button-link { display: inline-block; padding: .65rem 1rem; border: 1px solid #d3c7ec; border-radius: 7px; background: #fff; text-decoration: none; }
 .button-link.primary { background: #5b43b6; color: #fff; }
 .app-main { max-width: 1460px; padding: 28px; margin: 0 auto; }
